@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * ntsync.c - Kernel driver for NT synchronization primitives
@@ -20,7 +19,59 @@
 #include <linux/sched/signal.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
-#include <uapi/linux/ntsync.h>
+#include "uapi/linux/ntsync.h"
+
+/*
+ * GKI 6.6 compat: schedule_hrtimeout_range_clock() not exported.
+ */
+struct ntsync_hrtimer_sleeper {
+	struct hrtimer   timer;
+	struct task_struct *task;
+};
+
+static enum hrtimer_restart ntsync_hrtimer_wakeup(struct hrtimer *timer)
+{
+	struct ntsync_hrtimer_sleeper *t =
+		container_of(timer, struct ntsync_hrtimer_sleeper, timer);
+	struct task_struct *task = t->task;
+
+	t->task = NULL;
+	if (task)
+		wake_up_process(task);
+	return HRTIMER_NORESTART;
+}
+
+static int ntsync_schedule_hrtimeout(ktime_t *expires,
+				     enum hrtimer_mode mode,
+				     clockid_t clock)
+{
+	struct ntsync_hrtimer_sleeper t;
+
+	if (!expires) {
+		set_current_state(TASK_INTERRUPTIBLE);
+		schedule();
+		__set_current_state(TASK_RUNNING);
+		return -EINTR;
+	}
+
+	hrtimer_init(&t.timer, clock, mode);
+	t.timer.function = ntsync_hrtimer_wakeup;
+	t.task = current;
+
+	set_current_state(TASK_INTERRUPTIBLE);
+	hrtimer_start_range_ns(&t.timer, *expires, 0, mode);
+
+	schedule();
+	__set_current_state(TASK_RUNNING);
+
+	hrtimer_cancel(&t.timer);
+
+	return t.task ? -EINTR : 0;
+}
+
+#define schedule_hrtimeout_range_clock(expires, delta, mode, clock) \
+	ntsync_schedule_hrtimeout(expires, mode, clock)
+
 
 #define NTSYNC_NAME	"ntsync"
 
@@ -706,7 +757,7 @@ static struct ntsync_obj *ntsync_alloc_obj(struct ntsync_device *dev,
 {
 	struct ntsync_obj *obj;
 
-	obj = kzalloc_obj(*obj);
+	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
 	if (!obj)
 		return NULL;
 	obj->type = type;
@@ -722,12 +773,19 @@ static struct ntsync_obj *ntsync_alloc_obj(struct ntsync_device *dev,
 
 static int ntsync_obj_get_fd(struct ntsync_obj *obj)
 {
-	FD_PREPARE(fdf, O_CLOEXEC,
-		   anon_inode_getfile("ntsync", &ntsync_obj_fops, obj, O_RDWR));
-	if (fdf.err)
-		return fdf.err;
-	obj->file = fd_prepare_file(fdf);
-	return fd_publish(fdf);
+	int __ntsync_fd;
+	struct file *__ntsync_file;
+	__ntsync_fd = get_unused_fd_flags(O_CLOEXEC);
+	if (__ntsync_fd < 0)
+		return __ntsync_fd;
+	__ntsync_file = anon_inode_getfile("ntsync", &ntsync_obj_fops, obj, O_RDWR);
+	if (IS_ERR(__ntsync_file)) {
+		put_unused_fd(__ntsync_fd);
+		return PTR_ERR(__ntsync_file);
+	}
+	obj->file = __ntsync_file;
+	fd_install(__ntsync_fd, __ntsync_file);
+	return __ntsync_fd;
 }
 
 static int ntsync_create_sem(struct ntsync_device *dev, void __user *argp)
@@ -885,7 +943,7 @@ static int setup_wait(struct ntsync_device *dev,
 	if (args->alert)
 		fds[count] = args->alert;
 
-	q = kmalloc_flex(*q, entries, total_count);
+	q = kmalloc(struct_size(q, entries, total_count), GFP_KERNEL);
 	if (!q)
 		return -ENOMEM;
 	q->task = current;
@@ -1146,7 +1204,7 @@ static int ntsync_char_open(struct inode *inode, struct file *file)
 {
 	struct ntsync_device *dev;
 
-	dev = kzalloc_obj(*dev);
+	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
 	if (!dev)
 		return -ENOMEM;
 
