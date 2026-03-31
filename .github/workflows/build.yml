@@ -158,6 +158,7 @@ jobs:
               r'\1\n        \"drivers/misc/ntsync.ko\" +', data, count=1)
         open('BUILD.bazel','w').write(data)
         "
+          echo "CONFIG_NTSYNC=m" >> arch/arm64/configs/wild_gki.fragment
           echo "ntsync added successfully"
         fi
         
