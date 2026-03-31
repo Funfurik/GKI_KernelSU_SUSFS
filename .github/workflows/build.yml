@@ -131,6 +131,36 @@ jobs:
         kernel_version: ${{ steps.parse.outputs.kernel_version }}
         os_patch_level: ${{ steps.parse.outputs.os_patch_level }}
 
+    - name: Add ntsync support
+      run: |
+        if [[ "$ANDROID_VERSION" == "android15" && "$KERNEL_VERSION" == "6.6" ]]; then
+          cd "$GITHUB_WORKSPACE/kernel/common"
+
+          # Copy ntsync sources
+          cp "$GITHUB_WORKSPACE/patches/ntsync.c" drivers/misc/ntsync.c
+          mkdir -p include/uapi/linux
+          cp "$GITHUB_WORKSPACE/patches/ntsync.h" include/uapi/linux/ntsync.h
+
+          # Add to Makefile
+          echo 'obj-$(CONFIG_NTSYNC) += ntsync.o' >> drivers/misc/Makefile
+
+          # Add to Kconfig
+          sed -i '/^endmenu/i\\nconfig NTSYNC\n\ttristate "NT synchronization primitives"\n\tdefault y\n\thelp\n\t  NT sync.' drivers/misc/Kconfig
+
+          # Add to modules list for Bazel
+          sed -i 's|"drivers/misc/open-dice.ko",|"drivers/misc/open-dice.ko",\n    "drivers/misc/ntsync.ko",|' modules.bzl
+
+          # Add to BUILD.bazel module_implicit_outs
+          python3 -c "
+        import re
+        data = open('BUILD.bazel').read()
+        data = re.sub(r'(module_implicit_outs\s*=\s*get_gki_modules_list\(\"arm64\"\)[^,]*,)', 
+              r'\1\n        \"drivers/misc/ntsync.ko\" +', data, count=1)
+        open('BUILD.bazel','w').write(data)
+        "
+          echo "ntsync added successfully"
+        fi
+        
     - name: Extract Sublevel and Set File Name
       id: extract
       run: |
