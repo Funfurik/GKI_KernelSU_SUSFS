@@ -160,7 +160,7 @@ jobs:
         "
           touch arch/arm64/configs/wild_gki.fragment
           echo "CONFIG_NTSYNC=m" >> arch/arm64/configs/wild_gki.fragment
-          sed -i '/CONFIG_OPEN_DICE=m/a CONFIG_NTSYNC=m' arch/arm64/configs/gki_defconfig
+          sed -i '/CONFIG_VCPU_STALL_DETECTOR=m/a CONFIG_NTSYNC=m' arch/arm64/configs/gki_defconfig
           echo "ntsync added successfully"
         fi
         
