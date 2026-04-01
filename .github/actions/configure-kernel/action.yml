@@ -14,28 +14,7 @@ runs:
       run: |
         cat >> "${{ github.workspace }}/wild_gki.fragment" << 'EOF'
         # Optional kernel config placeholders
-        
-        CONFIG_ZRAM_WRITEBACK=y
-        CONFIG_ZRAM_TRACK_ENTRY_ACTIME=y
-        # CONFIG_ZRAM_MEMORY_TRACKING is not set
         CONFIG_ZRAM_MULTI_COMP=y
-        CONFIG_CROSS_MEMORY_ATTACH=y
-        CONFIG_ARCH_HAS_SET_MEMORY=y
-        CONFIG_MEMORY_ISOLATION=y
-        CONFIG_ARCH_ENABLE_MEMORY_HOTPLUG=y
-        CONFIG_ARCH_ENABLE_MEMORY_HOTREMOVE=y
-        CONFIG_MEMORY_HOTPLUG=y
-        # CONFIG_MEMORY_HOTPLUG_DEFAULT_ONLINE is not set
-        CONFIG_MEMORY_HOTREMOVE=y
-        CONFIG_MHP_MEMMAP_ON_MEMORY=y
-        CONFIG_ARCH_MHP_MEMMAP_ON_MEMORY_ENABLE=y
-        CONFIG_MEMORY_BALLOON=y
-        CONFIG_MEMORY_RELINQUISH=y
-        CONFIG_ARCH_SUPPORTS_MEMORY_FAILURE=y
-        CONFIG_MEMORY_FAILURE=y
-        CONFIG_MEMORY=y
-        CONFIG_DEBUG_MEMORY_INIT=y
-        
         # Networking Configuration
         CONFIG_IP_NF_TARGET_TTL=y
         CONFIG_IP6_NF_TARGET_HL=y
