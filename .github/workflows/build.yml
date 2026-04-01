@@ -139,8 +139,6 @@ jobs:
           mkdir -p include/uapi/linux
           cp "$GITHUB_WORKSPACE/patches/ntsync.h" include/uapi/linux/ntsync.h
           echo 'obj-y += ntsync.o' >> drivers/misc/Makefile
-          sed -i '/CONFIG_VCPU_STALL_DETECTOR=m/a CONFIG_NTSYNC=y' arch/arm64/configs/gki_defconfig
-          echo "CONFIG_NTSYNC=y" >> arch/arm64/configs/wild_gki.fragment
           echo "ntsync added successfully"
         fi
         
