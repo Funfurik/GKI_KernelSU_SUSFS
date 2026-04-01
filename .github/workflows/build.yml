@@ -159,8 +159,9 @@ jobs:
         open('BUILD.bazel','w').write(data)
         "
           touch arch/arm64/configs/wild_gki.fragment
-          echo "CONFIG_NTSYNC=m" >> arch/arm64/configs/wild_gki.fragment
-          sed -i '/CONFIG_VCPU_STALL_DETECTOR=m/a CONFIG_NTSYNC=m' arch/arm64/configs/gki_defconfig
+          sed -i '/CONFIG_VCPU_STALL_DETECTOR=m/a CONFIG_NTSYNC=y' arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NTSYNC=y" >> arch/arm64/configs/wild_gki.fragment
+          sed -i '/^endmenu/i\\nconfig NTSYNC\n\tbool "NT synchronization primitives"\n\tdefault y\n\thelp\n\t  NT sync.' drivers/misc/Kconfig
           echo "ntsync added successfully"
         fi
         
