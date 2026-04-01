@@ -14,7 +14,6 @@ runs:
       run: |
         cat >> "${{ github.workspace }}/wild_gki.fragment" << 'EOF'
         # Optional kernel config placeholders
-        CONFIG_NTSYNC=y
         CONFIG_ZRAM=m
         # CONFIG_ZRAM_DEF_COMP_LZORLE is not set
         CONFIG_ZRAM_DEF_COMP_ZSTD=y
