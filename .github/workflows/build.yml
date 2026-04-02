@@ -138,14 +138,8 @@ jobs:
           cp "$GITHUB_WORKSPACE/patches/ntsync.c" drivers/misc/ntsync.c
           mkdir -p include/uapi/linux
           cp "$GITHUB_WORKSPACE/patches/ntsync.h" include/uapi/linux/ntsync.h
-          sed -i '/config VCPU_STALL_DETECTOR/r /dev/stdin' drivers/misc/Kconfig << 'EOF'
-          config NTSYNC
-          tristate "NT synchronization primitives"
-          default y
-          help
-          Kernel driver for NT synchronization primitives.
-          EOF
-          echo 'obj-y += ntsync.o' >> drivers/misc/Makefile
+          printf '\nconfig NTSYNC\n\ttristate "NT synchronization primitives"\n\tdefault y\n\thelp\n\t  Kernel driver for NT synchronization primitives.\n' >> drivers/misc/Kconfig
+          echo 'obj-$(CONFIG_NTSYNC) += ntsync.o' >> drivers/misc/Makefile
           sed -i '/CONFIG_VCPU_STALL_DETECTOR=m/a CONFIG_NTSYNC=y' arch/arm64/configs/gki_defconfig
           echo "CONFIG_NTSYNC=y" >> arch/arm64/configs/wild_gki.fragment
           echo "ntsync added successfully"
