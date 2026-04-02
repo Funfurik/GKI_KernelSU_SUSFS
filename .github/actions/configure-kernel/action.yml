@@ -15,6 +15,7 @@ runs:
         cat >> "${{ github.workspace }}/wild_gki.fragment" << 'EOF'
         # Optional kernel config placeholders
         CONFIG_ZRAM_MULTI_COMP=y
+        CONFIG_ZRAM_WRITEBACK=y
         # Networking Configuration
         CONFIG_IP_NF_TARGET_TTL=y
         CONFIG_IP6_NF_TARGET_HL=y
